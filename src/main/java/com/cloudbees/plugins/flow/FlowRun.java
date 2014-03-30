@@ -39,6 +39,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
@@ -139,12 +140,24 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
 
     public synchronized void addBuild(JobInvocation job) throws ExecutionException, InterruptedException {
         jobsGraph.addVertex(job);
-        for (JobInvocation up : state.get().getLastCompleted()) {
-            String edge = up.getId() + " => " + job.getId();
-            LOGGER.fine("added build to execution graph " + edge);
-            jobsGraph.addEdge(up, job, new JobEdge(up, job));
+        if (state.get().getGraph() != null && state.get().getGraph().hasIncomingEdges(job)) {
+            Set<GraphEdge> incomingEdges = state.get().getGraph().getIncomingEdgesOf(job);
+            for (GraphEdge edge: incomingEdges) {
+                for (JobInvocation vertex: jobsGraph.vertexSet()) {
+                    if (vertex.getName().equals(edge.getSource())) {
+                        jobsGraph.addEdge(vertex, job, new JobEdge(vertex, job));
+                        break;
+                    }
+                }
+            }
+        } else {
+            for (JobInvocation up : state.get().getLastCompleted()) {
+                String edge = up.getId() + " => " + job.getId();
+                LOGGER.fine("added build to execution graph " + edge);
+                jobsGraph.addEdge(up, job, new JobEdge(up, job));
+            }
+            state.get().setLastCompleted(job);
         }
-        state.get().setLastCompleted(job);
     }
 
     @Override
@@ -249,6 +262,13 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
             return target;
         }
 
+        @Override
+        public String toString() {
+            return "Edge{" +
+                    "source=" + source.getName() +
+                    ", target=" + target.getName() +
+                    '}';
+        }
     }
 
 }

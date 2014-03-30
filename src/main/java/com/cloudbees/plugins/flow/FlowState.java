@@ -38,6 +38,8 @@ public class FlowState {
 
     private Set<JobInvocation> lastCompleted;
 
+    private FlowGraph graph;
+
     public FlowState(Result result, Set<JobInvocation> previous) {
         assert result != null;
         this.result = result;
@@ -48,6 +50,12 @@ public class FlowState {
         assert result != null;
         this.result = result;
         setLastCompleted(previous);
+    }
+
+    public FlowState(FlowState state, FlowGraph graph) {
+        this.result = state.result;
+        this.lastCompleted = state.lastCompleted;
+        this.graph = graph;
     }
 
     public Result getResult() {
@@ -73,6 +81,10 @@ public class FlowState {
 
     public JobInvocation getLastBuild() {
         return this.lastCompleted.iterator().next();
+    }
+
+    public FlowGraph getGraph() {
+        return graph;
     }
 
 }

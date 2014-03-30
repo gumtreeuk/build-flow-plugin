@@ -70,6 +70,10 @@ public class BuildFlow extends Project<BuildFlow, FlowRun> implements TopLevelIt
     private boolean buildNeedsWorkspace;
 
 
+    private String remoteDsl;
+
+    private String dslParam;
+
     public BuildFlow(ItemGroup parent, String name) {
         super(parent, name);
     }
