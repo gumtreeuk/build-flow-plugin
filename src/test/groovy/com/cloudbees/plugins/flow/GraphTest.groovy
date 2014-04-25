@@ -24,6 +24,8 @@
 
 package com.cloudbees.plugins.flow
 
+import hudson.model.ParametersAction
+import hudson.model.StringParameterValue
 import jenkins.model.Jenkins
 
 import static hudson.model.Result.SUCCESS
@@ -36,19 +38,20 @@ class GraphTest extends DSLTestCase {
         Jenkins.getInstance().setQuietPeriod(0)
     }
 
-//    public void testGraphWithChainedEdges() {
-//        // given
-//        def jobs = createJobs(["job1", "job2", "job3"])
-//
-//        // when
-//        def flow = run("""
-//            build(graph("job1").addEdge("job1", "job2").addEdge("job2", "job3"))
-//        """)
-//
-//        // then
-//        assertAllSuccess(jobs)
-//        assert SUCCESS == flow.result
-//    }
+    public void testGraphWithChainedEdges() {
+        // given
+        def jobs = createJobs(["job1", "job2", "job3"])
+
+        // when
+        def flow = run("""
+            def jobsGraph = graph().addEdge("job1", "job2").addEdge("job2", "job3")
+            build(jobsGraph, "job1")
+        """)
+
+        // then
+        assertAllSuccess(jobs)
+        assert SUCCESS == flow.result
+    }
 
     public void testGraphWithParallelEdges() {
         // given
@@ -56,7 +59,8 @@ class GraphTest extends DSLTestCase {
 
         // when
         def flow = run("""
-            build(graph("job1").withEdges(["job1", "job2"], ["job1", "job3"]))
+            def jobsGraph = graph().withEdges(["job1", "job2"], ["job1", "job3"])
+            build(jobsGraph, "job1")
         """)
 
         // then
@@ -70,15 +74,15 @@ class GraphTest extends DSLTestCase {
 
         // when
         def flow = run("""
-            build(graph("job1")
-                .withEdges(
+            def jobsGraph = graph(
                     ["job1", "job2"],
                     ["job1", "job3"],
                     ["job2", "job3"],
                     ["job3", "job4"],
                     ["job2", "job5"],
                     ["job1", "job6"],
-                    ["job5", "job6"]))
+                    ["job5", "job6"])
+            build(jobsGraph, "job1")
         """)
         // 1 -> 2 -> 3, 5 -> 4,6
 
@@ -86,5 +90,86 @@ class GraphTest extends DSLTestCase {
         assertAllSuccess(jobs)
         assert SUCCESS == flow.result
         println flow.jobsGraph.edgeSet()
+    }
+
+    public void testStartJobFromBuildParam() {
+        // given
+        def jobs = createJobs(["job1", "job2", "job3"])
+        def params = new ParametersAction(new StringParameterValue("INIT_JOB", "job1"))
+
+        // when
+        def flow = runWithParams("""
+            build(graph(["job1", "job2"], ["job2", "job3"]), getParamValue("INIT_JOB"))
+        """, params)
+
+        // then
+        assertAllSuccess(jobs)
+        assert SUCCESS == flow.result
+    }
+
+    public void testMultipleStartJobFromBuildParam() {
+        // given
+        def jobs = createJobs(["job0", "job1", "job2", "job3"])
+        def params = new ParametersAction(new StringParameterValue("INIT_JOBS", "job1,job2,job3"))
+
+        // when
+        def flow = runWithParams("""
+            build(graph(["job0", "job1"], ["job0", "job2"], ["job0", "job3"], ["job1", "job2"]), getParamValues("INIT_JOBS"))
+        """, params)
+
+        // then
+        assertAllSuccess([jobs[1], jobs[2], jobs[3]])
+        assertAllRunOnce([jobs[1], jobs[2], jobs[3]])
+        assertDidNotRun(jobs[0])
+        assert SUCCESS == flow.result
+    }
+
+    public void testMultipleStartJobs() {
+        // given
+        def jobs = createJobs(["job0", "job1", "job2", "job3"])
+
+        // when
+        def flow = run("""
+            build(graph(["job0", "job2"], ["job1", "job3"]), "job0", "job3")
+        """)
+
+        // then
+        assertAllSuccess([jobs[0], jobs[2], jobs[3]])
+        assertDidNotRun(jobs[1])
+        assert SUCCESS == flow.result
+    }
+
+    public void testMultipleStartJobsWithParentChildRelation() {
+        // given
+        def jobs = createJobs(["job0", "job1", "job2", "job3"])
+
+        // when
+        def flow = run("""
+            build(graph(["job0", "job1"], ["job0", "job2"], ["job1", "job3"]), "job0", "job1")
+        """)
+
+        // then
+        assertAllSuccess(jobs)
+        assertAllRunOnce(jobs)
+        assert SUCCESS == flow.result
+    }
+
+    public void testGraphLoadedFromURLString() {
+        // given
+        def URL graphURL = FlowGraphTest.class.getClassLoader().getResource("test-graph.properties")
+
+        // given
+        def jobs = createJobs(["job0", "job1", "job2", "job3", "job4", "job5"])
+
+        // when
+        def flow = run("""
+            def jobsGraph = graph("${graphURL.toString()}")
+            build(jobsGraph, "job0")
+        """)
+
+        // then
+        assertAllSuccess(jobs)
+        assertAllRunOnce(jobs)
+        assert SUCCESS == flow.result
     }
 }

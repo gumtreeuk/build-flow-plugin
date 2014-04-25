@@ -25,7 +25,6 @@
 
 package com.cloudbees.plugins.flow
 
-import groovy.transform.Synchronized
 import hudson.AbortException
 import hudson.console.ModelHyperlinkNote
 import hudson.model.*
@@ -38,9 +37,6 @@ import jenkins.model.Jenkins
 import org.acegisecurity.context.SecurityContextHolder
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ImportCustomizer
-import org.jgrapht.DirectedGraph
-import org.jgrapht.alg.DijkstraShortestPath
-import org.jgrapht.graph.SimpleDirectedGraph
 
 import java.util.concurrent.*
 import java.util.logging.Logger
@@ -58,6 +54,12 @@ public class FlowDSL {
                 Job job = Jenkins.instance.getItemByFullName(cause.upstreamProject)
                 upstream = job?.getBuildByNumber(cause.upstreamBuild)
                 // TODO handle matrix jobs ?
+
+                for (Action action: job.actions) {
+                    if (action instanceof ParametersAction) {
+                        ((ParametersAction) action).parameters
+                    }
+                }
             }
         }
 
@@ -72,7 +74,6 @@ public class FlowDSL {
 
         // TODO : add restrictions for System.exit, etc ...
         FlowDelegate flow = new FlowDelegate(flowRun, listener, upstream, envMap)
-
 
         // parse the script in such a way that it delegates to the flow object as default
         def cc = new CompilerConfiguration();
@@ -137,8 +138,9 @@ public class FlowDSL {
 
 @SuppressWarnings("GroovyUnusedDeclaration")
 public class FlowDelegate {
-
+    private static final PLACEHOLDER_PATTERN = ~/\{\{(.*)\}\}/
     private static final Logger LOGGER = Logger.getLogger(FlowDelegate.class.getName());
+
     def List<Cause> causes
     def FlowRun flowRun
     BuildListener listener
@@ -249,8 +251,7 @@ public class FlowDelegate {
         
         List<Action> actions = new ArrayList<Action>();
         List<ParameterValue> params = [];
-        Set<String> addedParams = new HashSet<String>();
-        for (Map.Entry param: args) {
+        Set<String> addedParams = new HashSet<String>();for (Map.Entry param: args) {
             String paramName = param.key
             Object paramValue = param.value
             if (paramValue instanceof Closure) {
@@ -482,12 +483,28 @@ public class FlowDelegate {
         return results
     }
 
-    def FlowGraph graph(String startJob) {
-        new FlowGraph(startJob)
+    def FlowGraph graph() {
+        new FlowGraph()
     }
 
-    def build(FlowGraph graph) {
-        new FlowGraphExecutor(this, graph).execute()
+    def FlowGraph graph(List<String>... edges) {
+        new FlowGraph().withEdges(edges)
+    }
+
+    def FlowGraph graph(String graphDefinitionURL) {
+        FlowGraph.createFromPropertyFileURL(graphDefinitionURL)
+    }
+
+    def build(FlowGraph graph, String... vertices) {
+        new FlowGraphExecutor(this, graph).execute(vertices)
+    }
+
+    def String getParamValue(String name) {
+        getParams().get(name)
+    }
+
+    def String[] getParamValues(String name) {
+        getParams().get(name).split(",")
     }
 
     /**
@@ -529,173 +546,5 @@ class DynamicExtensionLoader {
         if (v==null)
             throw new UnsupportedOperationException("No such extension available: "+name)
         return v;
-    }
-}
-
-class FlowGraph {
-    private DirectedGraph<String, GraphEdge> underlying
-    private String rootVertex
-
-    FlowGraph(String root) {
-        this.rootVertex = root
-        underlying = new SimpleDirectedGraph<String, GraphEdge>(GraphEdge.class);
-        underlying.addVertex(root)
-    }
-
-    def String getRootVertex() {
-        rootVertex
-    }
-
-    def FlowGraph addVertex(String jobName) {
-        underlying.addVertex(jobName)
-        return this;
-    }
-
-    def FlowGraph addEdge(String sourceJobName, String targetJobName) {
-        underlying.addVertex(sourceJobName)
-        underlying.addVertex(targetJobName)
-        underlying.addEdge(sourceJobName, targetJobName,  new GraphEdge(sourceJobName, targetJobName))
-        return this;
-    }
-
-    def FlowGraph withEdges(List<String>... edges) {
-        edges.each {edge -> addEdge(edge[0], edge[1])}
-        return this;
-    }
-
-    def boolean hasIncomingEdges(JobInvocation job) {
-        def edges = underlying.incomingEdgesOf(job.name)
-        edges != null && !edges.isEmpty()
-    }
-
-    def Set<GraphEdge> getIncomingEdgesOf(JobInvocation job) {
-        underlying.incomingEdgesOf(job.name)
-    }
-
-    def Set<GraphEdge> getOutgoingEdgesOf(JobInvocation job) {
-        underlying.outgoingEdgesOf(job.name)
-    }
-
-    def findPaths(String source, String target) {
-        DijkstraShortestPath.findPathBetween(underlying, source, target)
-    }
-
-    def pathExists(String source, String target) {
-        def paths = findPaths(source, target)
-        paths != null && !paths.isEmpty()
-    }
-
-    def isNotChildOfAny(String childJob, Set<String> jobs) {
-        def parent = jobs.find { job -> job != childJob && pathExists(job, childJob) }
-        parent == null
-    }
-}
-
-class FlowGraphExecutor {
-    private final FlowDelegate flowDSL
-    private final FlowGraph graph
-
-    private final runningBuilds = new HashSet<String>()
-    private final waitingBuilds = new HashSet<String>()
-    private final completed = new ArrayList<String>()
-
-    private final pool = Executors.newCachedThreadPool()
-
-    private boolean started = false
-
-    FlowGraphExecutor(FlowDelegate flowDSL, FlowGraph graph) {
-        this.flowDSL = flowDSL
-        this.graph = graph
-    }
-
-    def execute() {
-        if (!started) {
-            started = true
-            flowDSL.println("starting graph")
-            runningBuilds.add(graph.getRootVertex())
-            build([:], graph.getRootVertex())
-            while(!isCompleted()) {
-                Thread.sleep(1000)
-            }
-            flowDSL.println("graph done")
-        }
-    }
-
-    @Synchronized
-    def onBuildCompleted(JobInvocation jobInvocation) {
-        completed.add(jobInvocation.name)
-        runningBuilds.remove(jobInvocation.name)
-        graph.getOutgoingEdgesOf(jobInvocation).each { edge -> waitingBuilds.add(edge.target) }
-
-        def buildsToStart = waitingBuilds.findAll { waitingBuild -> hasNoRunningParent(waitingBuild) }
-
-        buildsToStart.each { buildToStart ->
-            if (graph.isNotChildOfAny(buildToStart, buildsToStart)) {
-                build([:], buildToStart)
-            }
-        }
-
-        if (isCompleted()) {
-            pool.shutdown()
-            pool.awaitTermination(1, TimeUnit.DAYS)
-        }
-    }
-
-    @Synchronized
-    def onBuildStart(String jobName) {
-        runningBuilds.add(jobName)
-        waitingBuilds.remove(jobName)
-    }
-
-    def hasNoRunningParent(String waitingBuild) {
-        graph.isNotChildOfAny(waitingBuild, runningBuilds)
-    }
-
-    private def build(Map args, String jobName) {
-        def currentState = flowDSL.flowRun.state
-        Closure<JobInvocation> track_closure = {
-            def ctx = ACL.impersonate(ACL.SYSTEM)
-            try {
-                flowDSL.flowRun.state = new FlowState(currentState, graph)
-                onBuildStart(jobName)
-                def jobInvocation = flowDSL.build(args, jobName)
-                onBuildCompleted(jobInvocation)
-                jobInvocation
-            } catch (Exception e) {
-                throw e;
-            }
-            finally {
-                SecurityContextHolder.setContext(ctx)
-            }
-        }
-
-        pool.submit(track_closure as Callable<JobInvocation>)
-    }
-
-    private def isCompleted() {
-        runningBuilds.isEmpty() && waitingBuilds.isEmpty()
-    }
-
-    @Override
-    def String toString() {
-        return underlying.toString()
-    }
-}
-
-class GraphEdge {
-    String source;
-    String target;
-
-    GraphEdge(String source, String target) {
-        this.source = source
-        this.target = target
-    }
-
-    @Override
-    def String toString() {
-        return "Edge{" +
-                "source='" + source + '\'' +
-                ", target='" + target + '\'' +
-                '}';
     }
 }

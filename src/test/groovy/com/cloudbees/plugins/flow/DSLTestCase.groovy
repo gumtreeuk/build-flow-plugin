@@ -27,7 +27,9 @@ package com.cloudbees.plugins.flow
 
 import com.cloudbees.plugin.flow.UnstableBuilder
 import com.cloudbees.plugins.flow.FlowDSL
+import hudson.model.Cause
 import hudson.model.Result
+import hudson.triggers.TimerTrigger
 import org.jvnet.hudson.test.FailureBuilder
 import hudson.model.AbstractBuild
 import hudson.model.ParametersAction
@@ -125,6 +127,13 @@ abstract class DSLTestCase {
         return flow.scheduleBuild2(0, cause).get()
     }
 
+    def runWithParams = { script, params ->
+        BuildFlow flow = new BuildFlow(Jenkins.instance, getName())
+        flow.dsl = script
+        def cause = new TimerTrigger.TimerTriggerCause()
+        return flow.scheduleBuild2(0, cause, params).get()
+    }
+
     def assertSuccess = { job ->
         Assert.assertNotNull("job ${job.name} didn't run", job.builds.lastBuild)
         assert SUCCESS == job.builds.lastBuild.result
@@ -139,6 +148,12 @@ abstract class DSLTestCase {
         jobs.each {
             Assert.assertNotNull("job ${it.name} didn't run", it.builds.lastBuild)
             assert SUCCESS == it.builds.lastBuild.result
+        }
+    }
+
+    def assertAllRunOnce = { jobs ->
+        jobs.each {
+            assertEquals("job ${it.name} did run more than once", 1, it.builds.size())
         }
     }
 

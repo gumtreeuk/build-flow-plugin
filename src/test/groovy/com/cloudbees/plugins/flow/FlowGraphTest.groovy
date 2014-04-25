@@ -29,9 +29,58 @@ import junit.framework.TestCase
 
 class FlowGraphTest extends TestCase {
 
+    public void testCreateGraphFromPropertyFileInputStream() {
+        // given
+        def InputStream graphIs = FlowGraphTest.class.getClassLoader().getResourceAsStream("test-graph.properties")
+
+        // when
+        def actualGraph = FlowGraph.createFromPropertyFile(graphIs)
+
+        // then
+        def expectedGraph = new FlowGraph()
+                .addEdge("job0", "job1").addEdge("job0", "job2").addEdge("job0", "job5")
+                .addEdge("job1", "job2").addEdge("job1", "job4")
+                .addEdge("job2", "job3")
+
+        assertEquals(expectedGraph, actualGraph)
+    }
+
+    public void testCreateGraphFromPropertyFileURL() {
+        // given
+        def URL graphURL = FlowGraphTest.class.getClassLoader().getResource("test-graph.properties")
+
+        // when
+        def actualGraph = FlowGraph.createFromPropertyFileURL(graphURL)
+
+        // then
+        def expectedGraph = new FlowGraph()
+                .addEdge("job0", "job1").addEdge("job0", "job2").addEdge("job0", "job5")
+                .addEdge("job1", "job2").addEdge("job1", "job4")
+                .addEdge("job2", "job3")
+
+        assertEquals(expectedGraph, actualGraph)
+    }
+
+    public void testCreateGraphFromPropertyFileURLAsString() {
+        // given
+        def URL graphURL = FlowGraphTest.class.getClassLoader().getResource("test-graph.properties")
+
+
+        // when
+        def actualGraph = FlowGraph.createFromPropertyFileURL(graphURL.toString())
+
+        // then
+        def expectedGraph = new FlowGraph()
+                .addEdge("job0", "job1").addEdge("job0", "job2").addEdge("job0", "job5")
+                .addEdge("job1", "job2").addEdge("job1", "job4")
+                .addEdge("job2", "job3")
+
+        assertEquals(expectedGraph, actualGraph)
+    }
+
     public void testIsNotChildOfAny() {
         // given
-        def graph = new FlowGraph("job1")
+        def graph = new FlowGraph()
                 .addEdge("job1", "job2")
                 .addEdge("job1", "job3")
                 .addEdge("job1", "job4")
@@ -45,7 +94,7 @@ class FlowGraphTest extends TestCase {
 
     public void testPathExists() {
         // given
-        def graph = new FlowGraph("job1")
+        def graph = new FlowGraph()
                 .addEdge("job1", "job2")
                 .addEdge("job1", "job3")
                 .addEdge("job1", "job4")
@@ -58,15 +107,15 @@ class FlowGraphTest extends TestCase {
 
     public void testFindPaths() {
         // given
-        def graph = new FlowGraph("job1")
+        def graph = new FlowGraph()
                 .addEdge("job1", "job2")
                 .addEdge("job1", "job3")
                 .addEdge("job1", "job4")
 
         // when + then
-        assertTrue(graph.findPaths("job1", "job2").size() == 1)
-        assertTrue(graph.findPaths("job2", "job1") == null)
-        assertTrue(graph.findPaths("job2", "job2").size() == 0)
-        assertTrue(graph.findPaths("job2", "job2").isEmpty())
+        assertTrue(graph.findPath("job1", "job2").size() == 1)
+        assertTrue(graph.findPath("job2", "job1") == null)
+        assertTrue(graph.findPath("job2", "job2").size() == 0)
+        assertTrue(graph.findPath("job2", "job2").isEmpty())
     }
 }

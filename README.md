@@ -1,16 +1,8 @@
-Deprecated
-==========
-
-You should consider the pipeline plugin as a replacement as it is actively maintained:
-* https://wiki.jenkins-ci.org/display/JENKINS/Pipeline+Plugin
-* https://github.com/jenkinsci/pipeline-plugin
-
-
 Jenkins Build Flow Plugin
 =========================
 
 Fork of https://github.com/jenkinsci/build-flow-plugin with additional DSL for defining a flow in form of a directional
-graph where vertices defines jobs to run and edges represents dependencies between jobs. It only works for non cyclic 
+graph where vertices defines jobs to run and edges represents dependencies between jobs. It only works for non cyclic
 graphs.
 
 ### Usage
