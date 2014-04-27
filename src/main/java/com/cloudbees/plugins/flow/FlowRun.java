@@ -140,16 +140,25 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
 
     public synchronized void addBuild(JobInvocation job) throws ExecutionException, InterruptedException {
         jobsGraph.addVertex(job);
-        if (state.get().getGraph() != null && state.get().getGraph().hasIncomingEdges(job)) {
-            Set<GraphEdge> incomingEdges = state.get().getGraph().getIncomingEdgesOf(job);
-            for (GraphEdge edge: incomingEdges) {
-                for (JobInvocation vertex: jobsGraph.vertexSet()) {
-                    if (vertex.getName().equals(edge.getSource())) {
-                        jobsGraph.addEdge(vertex, job, new JobEdge(vertex, job));
-                        break;
+        if (state.get().getGraph() != null) {
+            boolean foundParents = false;
+            if (state.get().getGraph().hasIncomingEdges(job)) {
+                Set<GraphEdge> incomingEdges = state.get().getGraph().getIncomingEdgesOf(job);
+                for (GraphEdge edge: incomingEdges) {
+                    for (JobInvocation vertex: jobsGraph.vertexSet()) {
+                        if (vertex.getName().equals(edge.getSource())) {
+                            foundParents = true;
+                            jobsGraph.addEdge(vertex, job, new JobEdge(vertex, job));
+                            break;
+                        }
                     }
                 }
             }
+
+            if (!foundParents) {
+                jobsGraph.addEdge(startJob, job, new JobEdge(startJob, job));
+            }
+
         } else {
             for (JobInvocation up : state.get().getLastCompleted()) {
                 String edge = up.getId() + " => " + job.getId();
@@ -270,5 +279,4 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
                     '}';
         }
     }
-
 }

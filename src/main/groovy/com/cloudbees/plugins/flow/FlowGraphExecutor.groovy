@@ -29,14 +29,14 @@ class FlowGraphExecutor {
     def execute(String... startVertices) {
         if (!started) {
             started = true
-            flowDSL.println("starting a graph base build for the following graph: " + graph.toString())
-            flowDSL.println("the build will start from the following vertices: " + startVertices)
+            flowDSL.println("Starting a graph base build for the graph: " + graph.toString())
+            flowDSL.println("The build will start from " + startVertices + " vertices")
 
             startVertices.each {vertex ->
                 waitingBuilds.add(vertex)
-                startWaitingBuilds()
             }
 
+            startWaitingBuilds()
             waitForCompletionAndShutdown()
         }
     }
@@ -55,7 +55,7 @@ class FlowGraphExecutor {
 
         buildsToStart.each { buildToStart ->
             if (graph.isNotChildOfAny(buildToStart, buildsToStart)) {
-                build([:], buildToStart)
+                build(flowDSL.getParams(), buildToStart)
             }
         }
     }
@@ -70,11 +70,6 @@ class FlowGraphExecutor {
         graph.isNotChildOfAny(waitingBuild, runningBuilds)
     }
 
-    @Override
-    def String toString() {
-        return underlying.toString()
-    }
-
     private def build(Map args, String jobName) {
         def currentState = flowDSL.flowRun.state
         Closure<JobInvocation> track_closure = {
@@ -86,6 +81,7 @@ class FlowGraphExecutor {
                 onBuildCompleted(jobInvocation)
                 jobInvocation
             } catch (Exception e) {
+                //todo - handle
                 throw e;
             }
             finally {
@@ -108,9 +104,6 @@ class FlowGraphExecutor {
         pool.shutdown()
         pool.awaitTermination(1, TimeUnit.DAYS)
 
-        flowDSL.println("the build has been completed")
+        flowDSL.println("The build has been completed")
     }
-
-
-
 }
