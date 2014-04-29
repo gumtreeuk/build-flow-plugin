@@ -17,15 +17,32 @@ class FlowGraph {
      * @return the graph
      */
     static def FlowGraph createFromPropertyFile(InputStream graphDefinition) {
+        createFromPropertyFile(graphDefinition, false)
+    }
+
+    /**
+     * Creates a graph from a java property file located at the given URL.
+     * If inverse is true then keys are source vertices and values are comma separated list of target vertices
+     * If inverse is false then keys are target vertices and values are comma separated list of sources vertices
+     *
+     * @param graphDefinition the a java property file containing graph definition
+     *
+     * @return the graph
+     */
+    static def FlowGraph createFromPropertyFile(InputStream graphDefinition, boolean inverse) {
         def properties = new Properties()
         properties.load(graphDefinition)
 
         def graph = new FlowGraph()
 
-        properties.stringPropertyNames().each {sourceVertex ->
-            def String value = properties.getProperty(sourceVertex)
-            value.split(",").each {targetVertex ->
-                graph.addEdge(sourceVertex, targetVertex)
+        properties.stringPropertyNames().each {key ->
+            def String value = properties.getProperty(key)
+            value.split(",").each {valueItem ->
+                if (inverse) {
+                    graph.addEdge(key, valueItem)
+                } else {
+                    graph.addEdge(valueItem, key)
+                }
             }
         }
 
@@ -34,13 +51,13 @@ class FlowGraph {
 
     static def FlowGraph createFromPropertyFileURL(URL graphDefinition) {
         graphDefinition.withInputStream {stream ->
-            createFromPropertyFile(stream)
+            createFromPropertyFile(stream, false)
         }
     }
 
     static def FlowGraph createFromPropertyFileURL(String graphDefinitionURL) {
         new URL(graphDefinitionURL).withInputStream {stream ->
-            createFromPropertyFile(stream)
+            createFromPropertyFile(stream, false)
         }
     }
 
@@ -90,6 +107,14 @@ class FlowGraph {
     def isNotChildOfAny(String childJob, Set<String> jobs) {
         def parent = jobs.find { job -> job != childJob && pathExists(job, childJob) }
         parent == null
+    }
+
+    def boolean containsEdge(String source, String target) {
+        underlying.containsEdge(source, target)
+    }
+
+    def boolean containsVertex(String vertex) {
+        underlying.containsVertex(vertex)
     }
 
     @Override

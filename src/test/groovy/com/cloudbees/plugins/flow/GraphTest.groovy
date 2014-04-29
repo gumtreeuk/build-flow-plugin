@@ -24,10 +24,12 @@
 
 package com.cloudbees.plugins.flow
 
+import hudson.model.Job
 import hudson.model.ParametersAction
 import hudson.model.StringParameterValue
 import jenkins.model.Jenkins
 
+import static hudson.model.Result.FAILURE
 import static hudson.model.Result.SUCCESS
 
 class GraphTest extends DSLTestCase {
@@ -159,17 +161,36 @@ class GraphTest extends DSLTestCase {
         def URL graphURL = FlowGraphTest.class.getClassLoader().getResource("test-graph.properties")
 
         // given
-        def jobs = createJobs(["job0", "job1", "job2", "job3", "job4", "job5"])
+        def jobs = createJobs(["job0", "job1", "job2", "job3", "job4"])
 
         // when
         def flow = run("""
             def jobsGraph = graph("${graphURL.toString()}")
-            build(jobsGraph, "job0")
+            build(jobsGraph, "job2")
         """)
 
         // then
-        assertAllSuccess(jobs)
-        assertAllRunOnce(jobs)
+        assertAllSuccess([jobs[0], jobs[1], jobs[2]])
+        assertAllRunOnce([jobs[0], jobs[1], jobs[2]])
+        assertDidNotRun(jobs[3])
+        assertDidNotRun(jobs[4])
+        assert SUCCESS == flow.result
+    }
+
+    public void testBuildWithFailingJob() {
+        // given
+        def Job[] jobs = createJobs(["job0", "job1"])
+        def failedJob = createFailJob("fail")
+
+        // when
+        def flow = run("""
+            build(graph(["job0", "failing"], ["failing", "job1"]), "job0")
+        """)
+
+        // then
+        assertAllSuccess(jobs[0])
+        assertDidNotRun(jobs[1])
+//        assertRan(failedJob, 1, FAILURE)
         assert SUCCESS == flow.result
     }
 }

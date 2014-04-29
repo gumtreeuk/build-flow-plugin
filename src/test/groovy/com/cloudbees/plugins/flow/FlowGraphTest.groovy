@@ -37,12 +37,45 @@ class FlowGraphTest extends TestCase {
         def actualGraph = FlowGraph.createFromPropertyFile(graphIs)
 
         // then
-        def expectedGraph = new FlowGraph()
-                .addEdge("job0", "job1").addEdge("job0", "job2").addEdge("job0", "job5")
-                .addEdge("job1", "job2").addEdge("job1", "job4")
-                .addEdge("job2", "job3")
+        assertTrue(actualGraph.containsVertex("job0"))
+        assertTrue(actualGraph.containsVertex("job1"))
+        assertTrue(actualGraph.containsVertex("job2"))
+        assertTrue(actualGraph.containsVertex("job3"))
+        assertTrue(actualGraph.containsVertex("job4"))
 
-        assertEquals(expectedGraph, actualGraph)
+        assertTrue(actualGraph.containsEdge("job1", "job0"))
+
+        assertTrue(actualGraph.containsEdge("job2", "job0"))
+        assertTrue(actualGraph.containsEdge("job2", "job1"))
+
+        assertTrue(actualGraph.containsEdge("job3", "job0"))
+
+        assertTrue(actualGraph.containsEdge("job4", "job1"))
+    }
+
+    public void testCreateInverseGraphFromPropertyFileInputStream() {
+        // given
+        def InputStream graphIs = FlowGraphTest.class.getClassLoader().getResourceAsStream("inverse-test-graph.properties")
+
+        // when
+        def actualGraph = FlowGraph.createFromPropertyFile(graphIs, true)
+
+        // then
+        assertTrue(actualGraph.containsVertex("job0"))
+        assertTrue(actualGraph.containsVertex("job1"))
+        assertTrue(actualGraph.containsVertex("job2"))
+        assertTrue(actualGraph.containsVertex("job3"))
+        assertTrue(actualGraph.containsVertex("job4"))
+        assertTrue(actualGraph.containsVertex("job5"))
+
+        assertTrue(actualGraph.containsEdge("job0", "job1"))
+        assertTrue(actualGraph.containsEdge("job0", "job2"))
+        assertTrue(actualGraph.containsEdge("job0", "job5"))
+
+        assertTrue(actualGraph.containsEdge("job1", "job2"))
+        assertTrue(actualGraph.containsEdge("job1", "job4"))
+
+        assertTrue(actualGraph.containsEdge("job2", "job3"))
     }
 
     public void testCreateGraphFromPropertyFileURL() {
@@ -53,12 +86,20 @@ class FlowGraphTest extends TestCase {
         def actualGraph = FlowGraph.createFromPropertyFileURL(graphURL)
 
         // then
-        def expectedGraph = new FlowGraph()
-                .addEdge("job0", "job1").addEdge("job0", "job2").addEdge("job0", "job5")
-                .addEdge("job1", "job2").addEdge("job1", "job4")
-                .addEdge("job2", "job3")
+        assertTrue(actualGraph.containsVertex("job0"))
+        assertTrue(actualGraph.containsVertex("job1"))
+        assertTrue(actualGraph.containsVertex("job2"))
+        assertTrue(actualGraph.containsVertex("job3"))
+        assertTrue(actualGraph.containsVertex("job4"))
 
-        assertEquals(expectedGraph, actualGraph)
+        assertTrue(actualGraph.containsEdge("job1", "job0"))
+
+        assertTrue(actualGraph.containsEdge("job2", "job0"))
+        assertTrue(actualGraph.containsEdge("job2", "job1"))
+
+        assertTrue(actualGraph.containsEdge("job3", "job0"))
+
+        assertTrue(actualGraph.containsEdge("job4", "job1"))
     }
 
     public void testCreateGraphFromPropertyFileURLAsString() {
@@ -70,12 +111,20 @@ class FlowGraphTest extends TestCase {
         def actualGraph = FlowGraph.createFromPropertyFileURL(graphURL.toString())
 
         // then
-        def expectedGraph = new FlowGraph()
-                .addEdge("job0", "job1").addEdge("job0", "job2").addEdge("job0", "job5")
-                .addEdge("job1", "job2").addEdge("job1", "job4")
-                .addEdge("job2", "job3")
+        assertTrue(actualGraph.containsVertex("job0"))
+        assertTrue(actualGraph.containsVertex("job1"))
+        assertTrue(actualGraph.containsVertex("job2"))
+        assertTrue(actualGraph.containsVertex("job3"))
+        assertTrue(actualGraph.containsVertex("job4"))
 
-        assertEquals(expectedGraph, actualGraph)
+        assertTrue(actualGraph.containsEdge("job1", "job0"))
+
+        assertTrue(actualGraph.containsEdge("job2", "job0"))
+        assertTrue(actualGraph.containsEdge("job2", "job1"))
+
+        assertTrue(actualGraph.containsEdge("job3", "job0"))
+
+        assertTrue(actualGraph.containsEdge("job4", "job1"))
     }
 
     public void testIsNotChildOfAny() {

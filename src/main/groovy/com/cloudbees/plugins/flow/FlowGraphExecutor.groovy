@@ -1,6 +1,7 @@
 package com.cloudbees.plugins.flow
 
 import groovy.transform.Synchronized
+import hudson.model.Result
 import hudson.security.ACL
 import org.acegisecurity.context.SecurityContextHolder
 
@@ -20,6 +21,7 @@ class FlowGraphExecutor {
     private final pool = Executors.newCachedThreadPool()
 
     private boolean started = false
+    private boolean failed = false
 
     FlowGraphExecutor(FlowDelegate flowDSL, FlowGraph graph) {
         this.flowDSL = flowDSL
@@ -45,18 +47,9 @@ class FlowGraphExecutor {
     def onBuildCompleted(JobInvocation jobInvocation) {
         completed.add(jobInvocation.name)
         runningBuilds.remove(jobInvocation.name)
-        graph.getOutgoingEdgesOf(jobInvocation).each { edge -> waitingBuilds.add(edge.target) }
-
-        startWaitingBuilds()
-    }
-
-    private def startWaitingBuilds() {
-        def buildsToStart = waitingBuilds.findAll { waitingBuild -> hasNoRunningParent(waitingBuild) }
-
-        buildsToStart.each { buildToStart ->
-            if (graph.isNotChildOfAny(buildToStart, buildsToStart)) {
-                build(flowDSL.getParams(), buildToStart)
-            }
+        if (!failed) {
+            graph.getOutgoingEdgesOf(jobInvocation).each { edge -> waitingBuilds.add(edge.target) }
+            startWaitingBuilds()
         }
     }
 
@@ -64,6 +57,13 @@ class FlowGraphExecutor {
     def onBuildStart(String jobName) {
         runningBuilds.add(jobName)
         waitingBuilds.remove(jobName)
+    }
+
+    @Synchronized
+    def onBuildFailed(String jobName) {
+        failed = true;
+        runningBuilds.remove(jobName)
+        waitingBuilds.clear();
     }
 
     def hasNoRunningParent(String waitingBuild) {
@@ -81,7 +81,7 @@ class FlowGraphExecutor {
                 onBuildCompleted(jobInvocation)
                 jobInvocation
             } catch (Exception e) {
-                //todo - handle
+                onBuildFailed(jobName)
                 throw e;
             }
             finally {
@@ -105,5 +105,15 @@ class FlowGraphExecutor {
         pool.awaitTermination(1, TimeUnit.DAYS)
 
         flowDSL.println("The build has been completed")
+    }
+
+    private def startWaitingBuilds() {
+        def buildsToStart = waitingBuilds.findAll { waitingBuild -> hasNoRunningParent(waitingBuild) }
+
+        buildsToStart.each { buildToStart ->
+            if (graph.isNotChildOfAny(buildToStart, buildsToStart)) {
+                build(flowDSL.getParams(), buildToStart)
+            }
+        }
     }
 }
