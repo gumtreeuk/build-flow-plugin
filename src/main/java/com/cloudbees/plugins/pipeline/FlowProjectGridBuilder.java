@@ -5,10 +5,7 @@ import com.cloudbees.plugins.flow.BuildFlow;
 import com.cloudbees.plugins.flow.FlowRun;
 import com.cloudbees.plugins.flow.JobInvocation;
 import hudson.Extension;
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
-import hudson.model.Item;
-import hudson.model.ItemGroup;
+import hudson.model.*;
 import hudson.util.AdaptedIterator;
 import hudson.util.HttpResponses;
 import hudson.util.ListBoxModel;
@@ -119,12 +116,24 @@ public class FlowProjectGridBuilder extends ProjectGridBuilder {
 
         @Override
         public int getColumns() {
-            return 10;
+            int max = 0;
+            for (BuildGrid next : builds) {
+                if (next.getColumns() > max) {
+                    max = next.getColumns();
+                }
+            }
+            return max;
         }
 
         @Override
         public int getRows() {
-            return 5;
+            int max = 0;
+            for (BuildGrid next : builds) {
+                if (next.getRows() > max) {
+                    max = next.getRows();
+                }
+            }
+            return max;
         }
     }
 
@@ -212,15 +221,9 @@ public class FlowProjectGridBuilder extends ProjectGridBuilder {
 //                    + ", flow build = " + build.getFlowRun() + ",depth = " + longestPathToRoot + ", placed = " + placedBuilds.contains(build));
 
 
-            if (longestPathToRoot == column && !placedBuilds.contains(build)) {
+            if (longestPathToRoot == column && !placedBuilds.contains(build) && getBuildSafely(build) != null) {
                 placedBuilds.add(build);
-
-                try {
-                    set(row, column, new BuildForm(new PipelineBuild((AbstractBuild)build.getBuild())));
-                } catch (Exception e) {
-                    // todo
-                    e.printStackTrace();
-                }
+                set(row, column, new BuildForm(new PipelineBuild(getBuildSafely(build))));
 
                 Set<JobInvocation> outgoingDependencies = flowGraph.getOutgoingDependencies(build);
                 int nextRow = row;
@@ -236,6 +239,17 @@ public class FlowProjectGridBuilder extends ProjectGridBuilder {
             }
 
             return row;
+        }
+
+        private AbstractBuild getBuildSafely(JobInvocation jobInvocation) {
+            try {
+                return (AbstractBuild) jobInvocation.getBuild();
+            } catch (Exception e) {
+                // todo
+                e.printStackTrace();
+            }
+
+            return null;
         }
 
 //        @Override
