@@ -92,6 +92,7 @@ class FlowGraphExecutor {
         pool.submit(track_closure as Callable<JobInvocation>)
     }
 
+    @Synchronized
     private def isCompleted() {
         runningBuilds.isEmpty() && waitingBuilds.isEmpty()
     }
