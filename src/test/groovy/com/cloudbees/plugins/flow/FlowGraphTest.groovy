@@ -29,6 +29,22 @@ import junit.framework.TestCase
 
 class FlowGraphTest extends TestCase {
 
+    public void testRealGumtreeGraph() {
+        // given
+        def InputStream graphIs = FlowGraphTest.class.getClassLoader().getResourceAsStream("real-gumtree-graph.properties")
+
+        // when
+        def actualGraph = FlowGraph.createFromPropertyFile(graphIs)
+
+        def vertices = "gt-flow-bapi-client,gt-flow-bapi-server".split(",")
+
+        // then
+        vertices.each { vertex ->
+            println("checking: ${vertex}")
+            assertTrue(actualGraph.containsVertex(vertex))
+        }
+    }
+
     public void testCreateGraphFromPropertyFileInputStream() {
         // given
         def InputStream graphIs = FlowGraphTest.class.getClassLoader().getResourceAsStream("test-graph.properties")
@@ -42,6 +58,7 @@ class FlowGraphTest extends TestCase {
         assertTrue(actualGraph.containsVertex("job2"))
         assertTrue(actualGraph.containsVertex("job3"))
         assertTrue(actualGraph.containsVertex("job4"))
+        assertTrue(actualGraph.containsVertex("job5"))
 
         assertTrue(actualGraph.containsEdge("job1", "job0"))
 
@@ -166,5 +183,7 @@ class FlowGraphTest extends TestCase {
         assertTrue(graph.findPath("job2", "job1") == null)
         assertTrue(graph.findPath("job2", "job2").size() == 0)
         assertTrue(graph.findPath("job2", "job2").isEmpty())
+        assertTrue(graph.findPath("job2", "non-existing") == null)
+        assertTrue(graph.findPath("non-existing", "job2") == null)
     }
 }

@@ -24,7 +24,9 @@
  */
 
 package com.cloudbees.plugins.flow
-
+import com.cloudbees.plugin.flow.BlockingBuilder
+import com.cloudbees.plugin.flow.ConfigurableFailureBuilder
+import com.cloudbees.plugin.flow.DelayedBuilder
 import com.cloudbees.plugin.flow.UnstableBuilder
 import com.cloudbees.plugins.flow.FlowDSL
 import hudson.model.Cause
@@ -32,8 +34,10 @@ import hudson.model.Result
 import hudson.triggers.TimerTrigger
 import org.jvnet.hudson.test.FailureBuilder
 import hudson.model.AbstractBuild
+import hudson.model.Job
 import hudson.model.ParametersAction
-import com.cloudbees.plugins.flow.BuildFlow
+import hudson.model.Result
+import hudson.triggers.TimerTrigger
 import jenkins.model.Jenkins
 import static hudson.model.Result.SUCCESS
 import java.util.concurrent.Future
@@ -56,8 +60,9 @@ import org.junit.Rule
 import org.junit.rules.TestName
 import org.jvnet.hudson.test.JenkinsRule
 
+import org.jvnet.hudson.test.HudsonTestCase
 
-import static hudson.model.Result.UNSTABLE
+import static hudson.model.Result.*
 
 abstract class DSLTestCase {
     @Rule
@@ -88,6 +93,12 @@ abstract class DSLTestCase {
         def job = createJob(name)
         job.getBuildersList().add(new UnstableBuilder());
         job.onCreatedFromScratch() // need this to updateTransientActions
+        return job
+    }
+
+    def createDelayedJob = {String name, Long delay ->
+        def job = createJob(name)
+        job.getBuildersList().add(new DelayedBuilder(delay));
         return job
     }
 
@@ -159,6 +170,10 @@ abstract class DSLTestCase {
 
     def assertFailure = { job ->
         assert FAILURE == job.builds.lastBuild.result
+    }
+
+    def assertAborted = { job ->
+        assert ABORTED == job.builds.lastBuild.result
     }
 
     def assertUnstable = { job ->

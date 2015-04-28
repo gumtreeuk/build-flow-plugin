@@ -24,31 +24,28 @@
 
 package com.cloudbees.plugins.flow;
 
-import static hudson.model.Result.FAILURE;
-import static hudson.model.Result.SUCCESS;
-import hudson.Util;
+import com.google.common.base.Optional;
 import hudson.model.Action;
 import hudson.model.Build;
 import hudson.model.BuildListener;
 import hudson.model.Result;
 import hudson.model.Run;
+import org.jgrapht.DirectedGraph;
+import org.jgrapht.ext.DOTExporter;
+import org.jgrapht.graph.SimpleDirectedGraph;
+import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerResponse;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
-import org.jgrapht.DirectedGraph;
-import org.jgrapht.ext.DOTExporter;
-import org.jgrapht.graph.SimpleDirectedGraph;
-import org.kohsuke.stapler.StaplerRequest;
-import org.kohsuke.stapler.StaplerResponse;
+import static hudson.model.Result.FAILURE;
+import static hudson.model.Result.SUCCESS;
 
 /**
  * Maintain the state of execution of a build flow as a chain of triggered jobs
@@ -136,6 +133,18 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
 
     public void doGetDot(StaplerRequest req, StaplerResponse rsp) throws IOException {
         new DOTExporter<JobInvocation, JobEdge>().export(rsp.getWriter(), jobsGraph);
+    }
+
+    public Optional<JobInvocation> findJob(String name) {
+        if (jobsGraph != null && !jobsGraph.vertexSet().isEmpty()) {
+            for(JobInvocation ji: jobsGraph.vertexSet()) {
+                if (ji.getName().equals(name)) {
+                    return Optional.of(ji);
+                }
+            }
+        }
+
+        return Optional.absent();
     }
 
     public synchronized void addBuild(JobInvocation job) throws ExecutionException, InterruptedException {
@@ -227,7 +236,7 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
         }
     }
 
-    protected class FlyweightTaskRunnerImpl extends RunExecution {
+    protected class FlyweightTaskRunnerImpl extends AbstractBuildExecution {
 
         private final String dsl;
 
@@ -236,20 +245,15 @@ public class FlowRun extends Build<BuildFlow, FlowRun> {
         }
 
         @Override
-        public Result run(BuildListener listener) throws Exception, RunnerAbortedException {
+        protected Result doRun(BuildListener listener) throws Exception, RunnerAbortedException {
             setResult(SUCCESS);
             new FlowDSL().executeFlowScript(FlowRun.this, dsl, listener);
             return getState().getResult();
         }
 
         @Override
-        public void post(BuildListener listener) throws Exception {
+        protected void post2(BuildListener listener) throws Exception {
             FlowRun.this.startJob.buildCompleted();
-        }
-
-        @Override
-        public void cleanUp(BuildListener listener) throws Exception {
-
         }
     }
 

@@ -23,21 +23,17 @@
  * THE SOFTWARE.
  */
 
-package com.cloudbees.plugins.flow;
-
+package com.cloudbees.plugins.flow
 import hudson.model.*
-import hudson.model.queue.QueueTaskFuture;
-import jenkins.model.Jenkins;
+import hudson.model.queue.QueueTaskFuture
+import jenkins.model.Jenkins
 
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.Condition;
-import java.util.logging.Logger;
-
-import java.text.DateFormat;
-
+import java.text.DateFormat
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.locks.Condition
+import java.util.concurrent.locks.Lock
+import java.util.concurrent.locks.ReentrantLock
+import java.util.logging.Logger
 /**
  * @author <a href="mailto:nicolas.deloof@gmail.com">Nicolas De Loof</a>
  */
@@ -227,6 +223,46 @@ public class JobInvocation {
         }
         return build;
     }
+
+//    public addParams(Map params) {
+//        List<ParameterValue> paramValues = []
+//
+//        println("actions: " + getBuild().getActions(ParametersAction.class).size())
+//        def List<ParametersAction> paramActions = getBuild().getActions(ParametersAction.class)
+//        if (paramActions != null) {
+//            paramActions.each {pAction ->
+//                paramValues.addAll(pAction.parameters)
+//                getBuild().getActions().remove(pAction)
+//            }
+//        }
+//
+//        println("actions: " + getBuild().getActions(ParametersAction.class).size())
+//
+//        params.each { key, value ->
+//            paramValues.put(new StringParameterValue(key, value))
+//        }
+//
+//        getBuild().addAction(new ParametersAction(paramValues))
+//    }
+
+//    public getParams() {
+//        buildParams = [:]
+//        getBuild().actions.each {action ->
+//            if (action instanceof ParametersAction)
+//
+//                action.getParameters().each {param ->
+//                    buildParams.put(param.getName(), param.va)
+//                }
+//
+//
+//                if (action.getParameter(name)?.value == value) {
+//                    found = true
+//                    return
+//                }
+//        }
+//
+//        buildParams
+//    }
 
     public AbstractProject<?, ? extends AbstractBuild<?, ?>> getProject() {
         if (project == null)

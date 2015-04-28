@@ -4,9 +4,12 @@ import org.jgrapht.DirectedGraph
 import org.jgrapht.alg.DijkstraShortestPath
 import org.jgrapht.graph.SimpleDirectedGraph
 
-
 class FlowGraph {
     private DirectedGraph<String, GraphEdge> underlying
+    private List<String> startJobs = new ArrayList<>()
+    private String buildMode = "SELECTED"
+    private Map params = new HashMap()
+    private List<Closure> successListeners = new ArrayList<Closure>()
 
     /**
      * Creates a graph from a java property file located at the given URL.
@@ -96,7 +99,11 @@ class FlowGraph {
     }
 
     def findPath(String source, String target) {
-        DijkstraShortestPath.findPathBetween(underlying, source, target)
+        if (underlying.containsVertex(source) && underlying.containsVertex(target)) {
+            return DijkstraShortestPath.findPathBetween(underlying, source, target)
+        }
+
+        return null
     }
 
     def pathExists(String source, String target) {
@@ -104,9 +111,19 @@ class FlowGraph {
         paths != null && !paths.isEmpty()
     }
 
-    def isNotChildOfAny(String childJob, Set<String> jobs) {
+    def isNotChildOfAny(String childJob, Iterable<String> jobs) {
         def parent = jobs.find { job -> job != childJob && pathExists(job, childJob) }
         parent == null
+    }
+
+    def isChildOfAny(String childJob, Iterable<String> jobs) {
+        def parent = jobs.find { job -> job != childJob && pathExists(job, childJob) }
+        parent != null
+    }
+
+    def isParentOfAny(String parentJob, Iterable<String> jobs) {
+        def parent = jobs.find { job -> job != parentJob && pathExists(parentJob, job) }
+        parent != null
     }
 
     def boolean containsEdge(String source, String target) {
@@ -117,9 +134,57 @@ class FlowGraph {
         underlying.containsVertex(vertex)
     }
 
+    def Set<String> getVertices() {
+        underlying.vertexSet()
+    }
+
+    def FlowGraph onBuildSuccess(Closure listener) {
+        this.successListeners.add(listener);
+        return this
+    }
+
+    def FlowGraph withBuildMode(String buildMode) {
+        if ("SELECTED".equals(buildMode) || "EVERYTHING".equals(buildMode) || "CHANGED".equals(buildMode)) {
+            this.buildMode = buildMode
+        }
+        return this
+    }
+
+    def FlowGraph withStartJobs(Collection<String> startJobs) {
+        this.startJobs = startJobs;
+        return this
+    }
+
+    def FlowGraph withMoreStartJobs(Collection<String> startJobs) {
+        this.startJobs.addAll(startJobs)
+        return this
+    }
+
+    def FlowGraph withParams(Map params) {
+        this.params = params
+        return this
+    }
+
+    List<Closure> getSuccessListeners() {
+        return successListeners
+    }
+
+    Collection<String> getStartJobs() {
+        return startJobs
+    }
+
+    String getBuildMode() {
+        return buildMode
+    }
+
+    Map getParams() {
+        return params
+    }
+
     @Override
     def String toString() {
-        return underlying.toString();
+        return "vertices[${underlying.vertexSet().size()}]: ${underlying.vertexSet()}" +
+                ", edges[${underlying.edgeSet().size()}]: ${underlying.edgeSet()}"
     }
 
     @Override
@@ -144,6 +209,7 @@ class FlowGraph {
         return (underlying != null ? underlying.hashCode() : 0)
     }
 }
+
 
 class GraphEdge {
     String source;

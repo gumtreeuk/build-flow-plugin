@@ -46,6 +46,8 @@ import static hudson.model.Result.SUCCESS
 
 public class FlowDSL {
 
+    private static final Logger LOGGER = Logger.getLogger(FlowRun.class.getName());
+
     def void executeFlowScript(FlowRun flowRun, String dsl, BuildListener listener) {
         // Retrieve the upstream build if the flow was triggered by another job
         Run upstream = null;
@@ -170,6 +172,7 @@ public class FlowDelegate {
     }
 
     def println(String s) {
+        LOGGER.info(s)
         println_with_indent { out.print(s) }
     }
 
@@ -232,7 +235,7 @@ public class FlowDelegate {
         flowRun.waitForCompletion(job);
         // [JENKINS-22960] wait for build to be finalized.
         flowRun.waitForFinalization(job);
-        println(ModelHyperlinkNote.encodeTo('/'+ r.getUrl(), r.getFullDisplayName())
+        println("Build " + ModelHyperlinkNote.encodeTo('/'+ r.getUrl(), r.getFullDisplayName())
                 + " completed ${r.result.isWorseThan(SUCCESS) ? " : " + r.result : ""}")
         return job;
     }
@@ -474,7 +477,7 @@ public class FlowDelegate {
 
             pool.shutdown()
             pool.awaitTermination(1, TimeUnit.DAYS)
-            current_state.lastCompleted =lastCompleted
+            current_state.lastCompleted = lastCompleted
         } finally {
             flowRun.state = current_state
             --indent
@@ -495,16 +498,34 @@ public class FlowDelegate {
         FlowGraph.createFromPropertyFileURL(graphDefinitionURL)
     }
 
-    def build(FlowGraph graph, String... vertices) {
-        new FlowGraphExecutor(this, graph).execute(vertices)
+    def build(FlowGraph graph) {
+        new FlowGraphExecutor(this, graph).execute()
     }
 
-    def String getParamValue(String name) {
+    def String getParam(String name) {
         getParams().get(name)
     }
 
-    def String[] getParamValues(String name) {
-        getParams().get(name).split(",")
+    /**
+     * Loads properties from the property file
+     *
+     * @param propertiesURL the location of the properties file to load
+     * @return the properties
+     */
+    def Map<String, String> loadProperties(String propertiesURL) {
+        new URL(propertiesURL).withInputStream {stream ->
+            def properties = new Properties()
+            properties.load(stream)
+
+            def map = [:]
+
+            properties.stringPropertyNames().each {key ->
+                def String value = properties.getProperty(key)
+                map.put(key, value)
+            }
+
+            map
+        }
     }
 
     /**
