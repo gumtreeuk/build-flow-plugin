@@ -73,6 +73,11 @@ class FlowGraph {
         return this;
     }
 
+    def FlowGraph addVertices(List<String> jobNames) {
+        jobNames.each { underlying.addVertex(it) }
+        return this;
+    }
+
     def FlowGraph addEdge(String sourceJobName, String targetJobName) {
         underlying.addVertex(sourceJobName)
         underlying.addVertex(targetJobName)
