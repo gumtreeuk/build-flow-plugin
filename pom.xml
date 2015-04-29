@@ -65,6 +65,29 @@
     <tag>HEAD</tag>
   </scm>
 
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+        <gt.nexus.releases.id>GTRELEASE</gt.nexus.releases.id>
+        <gt.nexus.releases.name>Gumtree Internal Releases</gt.nexus.releases.name>
+        <gt.nexus.releases.url>http://nexus.ci.gumtree.com/nexus/content/repositories/releases/</gt.nexus.releases.url>
+    </properties>
+
+    <distributionManagement>
+        <repository>
+            <id>${gt.nexus.releases.id}</id>
+            <name>${gt.nexus.releases.name}</name>
+            <url>${gt.nexus.releases.url}</url>
+        </repository>
+        <snapshotRepository>
+            <id>GTSNAPSHOTS</id>
+            <name>Gumtree Internal Snapshots</name>
+            <url>http://nexus.ci.gumtree.com/nexus/content/repositories/snapshots/</url>
+            <uniqueVersion>false</uniqueVersion>
+        </snapshotRepository>
+    </distributionManagement>
+
     <build>
         <plugins>
             <plugin>
@@ -155,7 +178,6 @@
             <scope>test</scope>
         </dependency>
 
-<<<<<<< HEAD
         <!-- Add test dependencies for pipeline plugin -->
         <dependency>
             <groupId>org.jenkins-ci.plugins.workflow</groupId>
@@ -180,36 +202,6 @@
             <artifactId>workflow-durable-task-step</artifactId>
             <version>${pipeline.version}</version>
             <scope>test</scope>
-=======
-
-
-
-        <dependency>
-            <groupId>info.cukes</groupId>
-            <artifactId>cucumber-core</artifactId>
-            <version>1.0.10</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>info.cukes</groupId>
-            <artifactId>cucumber-java</artifactId>
-            <version>1.0.10</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>info.cukes</groupId>
-            <artifactId>cucumber-junit</artifactId>
-            <version>1.0.10</version>
-            <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.mockito</groupId>
-                    <artifactId>mockito-all</artifactId>
-                </exclusion>
-            </exclusions>
->>>>>>> update graph DSL
         </dependency>
     </dependencies>
   
