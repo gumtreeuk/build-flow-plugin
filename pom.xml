@@ -71,7 +71,7 @@
 
         <gt.nexus.releases.id>GTRELEASE</gt.nexus.releases.id>
         <gt.nexus.releases.name>Gumtree Internal Releases</gt.nexus.releases.name>
-        <gt.nexus.releases.url>http://nexus.ci.gumtree.com/nexus/content/repositories/releases/</gt.nexus.releases.url>
+        <gt.nexus.releases.url>http://nexus.qa.gt.ecg.so/nexus/content/repositories/releases/</gt.nexus.releases.url>
     </properties>
 
     <distributionManagement>
@@ -83,7 +83,7 @@
         <snapshotRepository>
             <id>GTSNAPSHOTS</id>
             <name>Gumtree Internal Snapshots</name>
-            <url>http://nexus.ci.gumtree.com/nexus/content/repositories/snapshots/</url>
+            <url>http://nexus.qa.gt.ecg.so/nexus/content/repositories/snapshots/</url>
             <uniqueVersion>false</uniqueVersion>
         </snapshotRepository>
     </distributionManagement>
