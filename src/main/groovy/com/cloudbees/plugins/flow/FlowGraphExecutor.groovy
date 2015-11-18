@@ -124,7 +124,7 @@ class FlowGraphExecutor {
             waitingJobs.clear();
             failedBuilds.add(jobName)
             flowDSL.flowRun.state.result = Result.FAILURE
-            abortRunningBuilds(jobName)
+//            abortRunningBuilds(jobName)
             flowDSL.fail()
         }
     }
