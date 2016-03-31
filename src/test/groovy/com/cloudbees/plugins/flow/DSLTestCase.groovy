@@ -155,6 +155,12 @@ abstract class DSLTestCase {
         assert 0 == job.builds.size()
     }
 
+    def assertAllDidNotRun = { jobs ->
+        jobs.each { job ->
+            assertDidNotRun(job)
+        }
+    }
+
     def assertAllSuccess = { jobs ->
         jobs.each {
             Assert.assertNotNull("job ${it.name} didn't run", it.builds.lastBuild)

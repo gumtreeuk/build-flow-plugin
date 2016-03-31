@@ -58,7 +58,6 @@ class FlowGraphTest extends TestCase {
         assertTrue(actualGraph.containsVertex("job2"))
         assertTrue(actualGraph.containsVertex("job3"))
         assertTrue(actualGraph.containsVertex("job4"))
-        assertTrue(actualGraph.containsVertex("job5"))
 
         assertTrue(actualGraph.containsEdge("job1", "job0"))
 

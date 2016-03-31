@@ -235,8 +235,9 @@ public class FlowDelegate {
         flowRun.waitForCompletion(job);
         // [JENKINS-22960] wait for build to be finalized.
         flowRun.waitForFinalization(job);
-        println("Build " + ModelHyperlinkNote.encodeTo('/'+ r.getUrl(), r.getFullDisplayName())
-                + " completed ${r.result.isWorseThan(SUCCESS) ? " : " + r.result : ""}")
+        def consoleLog = HyperlinkNote.encodeTo('/'+ r.getUrl() + "console", "Show console log")
+        println("Build " + ModelHyperlinkNote.encodeTo('/'+ r.getUrl(), buildDisplayName) 
+                + " completed${r.result.isWorseThan(SUCCESS) ? " : " + r.result : ""}. " + consoleLog)
         return job;
     }
 

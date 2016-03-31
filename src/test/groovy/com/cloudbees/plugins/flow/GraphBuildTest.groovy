@@ -346,4 +346,102 @@ class GraphBuildTest extends DSLTestCase {
         assertFailure(willFail)
         assertAborted(slowJob)
     }
+
+    public void testChangedDependantAndDependOnJobAreBuild() {
+        // given
+        // job0 -> job1 -> job3 -> job6
+        //              -> job4
+        //      -> job2
+        // job5
+        def jobs = createJobs(["job0", "job1", "job2", "job3", "job4", "job5", "job6"])
+
+        // when
+        // I want to build job3
+        // + job0 has new changes which I want to use in job3 (so I want to build job2 too)
+        // + job5 has changes but I don't need them in job3 (so I don't want to build job5)
+        def flow = run("""
+            build(graph(["job0", "job1"], ["job0", "job2"], , ["job1", "job3"], ["job1", "job4"], ["job3", "job6"])
+                .withMustBuildJobs(["job3"])
+                .withModifiedJobs(["job0", "job5"]))
+        """)
+
+        // then
+        // job0 - has changed AND is dependOn job oj job3 (the must build job) AND buildDependOnJobs is true (default value)
+        // job1 - has not changed but is on the path between job0 to job3
+        // job3 - is the must build job
+        // job6 - has not changed but is dependant of job3 AND buildDependantJobs is true (default value)
+        assertAllSuccess([jobs[0], jobs[1], jobs[3], jobs[6]])
+
+        // job2 - has been modified but is not used by any must build job
+        // job4 - has not been modified AND is not used by any must build job
+        // job5 - has been modified but is not used by any must build job
+        assertAllDidNotRun([jobs[2], jobs[4], jobs[5]])
+        assert SUCCESS == flow.result
+    }
+
+    public void testNoDependantJobAreBuild() {
+        // given
+        // job0 -> job1 -> job3 -> job6
+        //              -> job4
+        //      -> job2
+        // job5
+        def jobs = createJobs(["job0", "job1", "job2", "job3", "job4", "job5", "job6"])
+
+        // when
+        // I want to build job3
+        // + job0 has new changes which I want to use in job3 (so I want to build job2 too)
+        // + job5 has changes but I don't need them in job3 (so I don't want to build job5)
+        def flow = run("""
+            build(graph(["job0", "job1"], ["job0", "job2"], , ["job1", "job3"], ["job1", "job4"])
+                .withBuildDependantJobs(false)
+                .withMustBuildJobs(["job1", "job3"])
+                .withModifiedJobs(["job0", "job1", "job2", "job3", "job4", "job5"]))
+        """)
+
+        // then
+        // job0 - has been modified AND is dependOn job for job1 AND buildDependOnJobs is true (default value)
+        // job1 - is the must build job
+        // job3 - is the must build job
+        assertAllSuccess([jobs[0], jobs[1], jobs[3]])
+
+        // job2 - has been modified but is not used by any must build job
+        // job4 - has been modified AND is dependant of job1 but buildDependantJobs is false
+        // job5 - has been modified but is not used by any must build job
+        // job6 - has been modified AND is dependant of job3 but buildDependantJobs is false
+        assertAllDidNotRun([jobs[2], jobs[4], jobs[5], jobs[6]])
+        assert SUCCESS == flow.result
+    }
+
+    public void testNoDependantAndNoDependOnJobsShouldBeBuild() {
+        // given
+        // job0 -> job1 -> job3 -> job6
+        //              -> job4
+        //      -> job2
+        // job5
+        // job7 -> job6
+        def jobs = createJobs(["job0", "job1", "job2", "job3", "job4", "job5", "job6", "job7"])
+
+        // when
+        def flow = run("""
+            build(graph(["job0", "job1"], ["job0", "job2"], ["job1", "job3"], ["job1", "job4"], ["job3", "job6"], ["job7", "job6"])
+                .withBuildDependOnJobs(false)
+                .withBuildDependantJobs(false)
+                .withMustBuildJobs(["job1", "job6"])
+                .withModifiedJobs(["job0", "job1", "job2", "job3", "job4", "job5", "job6"]))
+        """)
+
+        // then
+        // job1 - is a must build job
+        // job3 - is on the path between job1 and job6 so it must be build
+        // job6 - is a must build job
+        assertAllSuccess([jobs[1], jobs[3], jobs[6]])
+
+        // job0 - has been modified AND is dependOn job for both (job1 and job6) but buildDependOnJobs is false
+        // job2 - has been modified but it's not used by any must build jobs
+        // job4 - has been modified AND is dependant of job1 but buildDependantJobs is false
+        // job5 - has been modified but it's not used by any must build jobs
+        // job7 - has been modified AND is dependOn job of job6 but buildDependOnJobs is false
+        assertAllDidNotRun([jobs[0], jobs[2], jobs[4], jobs[5], jobs[7]])
+        assert SUCCESS == flow.result
+    }
 }

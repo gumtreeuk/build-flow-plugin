@@ -6,10 +6,35 @@ import org.jgrapht.graph.SimpleDirectedGraph
 
 class FlowGraph {
     private DirectedGraph<String, GraphEdge> underlying
+
+    /**
+     * Jobs that you want to built for sure
+     */
+    private List<String> mustBuildJobs = new ArrayList<>()
+
+    /**
+     * Jobs you want the build process to start from. Based on the build flags they may or may not be build as it depends on whether
+     * they are required by the must build jobs or not.
+     */
     private List<String> startJobs = new ArrayList<>()
-    private String buildMode = "SELECTED"
+
     private Map params = new HashMap()
     private List<Closure> successListeners = new ArrayList<Closure>()
+
+    /**
+     * Instructs the build process to build every jobs in the graph
+     */
+    private boolean buildEverything = false
+
+    /**
+     * Instructs the build process to build dependant jobs (child jobs) of any successfully built job
+     */
+    private boolean buildDependantJobs = true
+
+    /**
+     * Instructs the build process to build jobs that the must build jobs depend on
+     */
+    private boolean buildDependOnJobs = true
 
     /**
      * Creates a graph from a java property file located at the given URL.
@@ -149,19 +174,45 @@ class FlowGraph {
     }
 
     def FlowGraph withBuildMode(String buildMode) {
-        if ("SELECTED".equals(buildMode) || "EVERYTHING".equals(buildMode) || "CHANGED".equals(buildMode)) {
-            this.buildMode = buildMode
+        if ("EVERYTHING".equals(buildMode)) {
+            this.withBuildEverything(true)
         }
         return this
     }
 
-    def FlowGraph withStartJobs(Collection<String> startJobs) {
-        this.startJobs = startJobs;
+    def FlowGraph withBuildEverything(boolean value) {
+        this.buildEverything = value
         return this
     }
 
-    def FlowGraph withMoreStartJobs(Collection<String> startJobs) {
-        this.startJobs.addAll(startJobs)
+
+    def FlowGraph withBuildDependantJobs(boolean value) {
+        this.buildDependantJobs = value
+        return this
+    }
+
+    def FlowGraph withBuildDependOnJobs(boolean value) {
+        this.buildDependOnJobs = value
+        return this
+    }
+
+    def FlowGraph withStartJobs(Collection<String> startJobs) {
+        this.startJobs.addAll(startJobs);
+        return this
+    }
+
+    def FlowGraph withModifiedJobs(Collection<String> startJobs) {
+        this.startJobs.addAll(startJobs);
+        return this
+    }
+
+    def FlowGraph withMustBuildJobs(Collection<String> jobs) {
+        this.mustBuildJobs.addAll(jobs)
+        return this
+    }
+
+    def FlowGraph withMoreStartJobs(Collection<String> jobs) {
+        this.startJobs.addAll(jobs)
         return this
     }
 
@@ -175,11 +226,23 @@ class FlowGraph {
     }
 
     Collection<String> getStartJobs() {
-        return startJobs
+        if (buildEverything) {
+            return this.underlying.vertexSet()
+        } else {
+            return startJobs
+        }
     }
 
-    String getBuildMode() {
-        return buildMode
+    List<String> getMustBuildJobs() {
+        return !mustBuildJobs.isEmpty() ? mustBuildJobs : startJobs;
+    }
+
+    boolean getBuildDependantJobs() {
+        return buildDependantJobs
+    }
+
+    boolean getBuildDependOnJobs() {
+        return buildDependOnJobs
     }
 
     Map getParams() {

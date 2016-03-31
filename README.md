@@ -5,6 +5,10 @@ Fork of https://github.com/jenkinsci/build-flow-plugin with additional DSL for d
 graph where vertices defines jobs to run and edges represents dependencies between jobs. It only works for non cyclic
 graphs.
 
+### Gumtree Release
+
+Push your changes and build a new version it using http://jenkins.qa.gt.ecg.so/view/All/job/jenkins-build-flow-plugin/.
+
 ### Usage
 
 #### Start a build from the root job
