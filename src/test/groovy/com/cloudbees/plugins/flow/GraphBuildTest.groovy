@@ -45,7 +45,7 @@ class GraphBuildTest extends DSLTestCase {
 
         // when
         def flow = run("""
-            def jobsGraph = graph().addEdge("job1", "job2").addEdge("job2", "job3").withStartJobs(["job1"])
+            def jobsGraph = graph().addEdge("job1", "job2").addEdge("job2", "job3").withMustBuildJobs(["job1"])
             build(jobsGraph)
         """)
 
@@ -64,7 +64,7 @@ class GraphBuildTest extends DSLTestCase {
                 .addVertex("job0")
                 .addVertex("job1")
                 .addVertex("job2")
-                .withStartJobs(["job0", "job1"])
+                .withMustBuildJobs(["job0", "job1"])
             build(jobsGraph)
         """)
 
@@ -79,7 +79,7 @@ class GraphBuildTest extends DSLTestCase {
 
         // when
         def flow = run("""
-            def jobsGraph = graph().withEdges(["job1", "job2"], ["job1", "job3"]).withStartJobs(["job1"])
+            def jobsGraph = graph().withEdges(["job1", "job2"], ["job1", "job3"]).withMustBuildJobs(["job1"])
             build(jobsGraph)
         """)
 
@@ -101,7 +101,7 @@ class GraphBuildTest extends DSLTestCase {
                     ["job3", "job4"],
                     ["job2", "job5"],
                     ["job1", "job6"],
-                    ["job5", "job6"]).withStartJobs(["job1"])
+                    ["job5", "job6"]).withMustBuildJobs(["job1"])
             build(jobsGraph)
         """)
         // 1 -> 2 -> 3, 5 -> 4,6
@@ -119,7 +119,7 @@ class GraphBuildTest extends DSLTestCase {
 
         // when
         def flow = runWithParams("""
-            build(graph(["job1", "job2"], ["job2", "job3"]).withStartJobs([params["INIT_JOB"]]))
+            build(graph(["job1", "job2"], ["job2", "job3"]).withMustBuildJobs([params["INIT_JOB"]]))
         """, params)
 
         // then
@@ -135,7 +135,7 @@ class GraphBuildTest extends DSLTestCase {
         // when
         def flow = runWithParams("""
             def mustJobs = params["INIT_JOBS"].split(",").toList()
-            build(graph(["job0", "job1"], ["job0", "job2"], ["job0", "job3"], ["job1", "job2"]).withStartJobs(mustJobs))
+            build(graph(["job0", "job1"], ["job0", "job2"], ["job0", "job3"], ["job1", "job2"]).withMustBuildJobs(mustJobs))
         """, params)
 
         // then
@@ -151,7 +151,7 @@ class GraphBuildTest extends DSLTestCase {
 
         // when
         def flow = run("""
-            build(graph(["job0", "job2"], ["job1", "job3"]).withStartJobs(["job0", "job3"]))
+            build(graph(["job0", "job2"], ["job1", "job3"]).withMustBuildJobs(["job0", "job3"]))
         """)
 
         // then
@@ -166,7 +166,7 @@ class GraphBuildTest extends DSLTestCase {
 
         // when
         def flow = run("""
-            build(graph(["job0", "job1"]).withStartJobs([""]))
+            build(graph(["job0", "job1"]).withMustBuildJobs([""]))
         """)
 
         // then
@@ -181,7 +181,7 @@ class GraphBuildTest extends DSLTestCase {
 
         // when
         def flow = run("""
-            build(graph(["job0", "job2"], ["job1", "job3"]).withStartJobs(["job1", "job3"]))
+            build(graph(["job0", "job2"], ["job1", "job3"]).withMustBuildJobs(["job1", "job3"]))
         """)
 
         // then
@@ -197,7 +197,7 @@ class GraphBuildTest extends DSLTestCase {
 
         // when
         def flow = run("""
-            build(graph(["job0", "job1"], ["job0", "job2"], ["job1", "job3"]).withStartJobs(["job0", "job1"]))
+            build(graph(["job0", "job1"], ["job0", "job2"], ["job1", "job3"]).withMustBuildJobs(["job0", "job1"]))
         """)
 
         // then
@@ -215,7 +215,7 @@ class GraphBuildTest extends DSLTestCase {
 
         // when
         def flow = run("""
-            def jobsGraph = graph("${graphURL.toString()}").withStartJobs(["job2"])
+            def jobsGraph = graph("${graphURL.toString()}").withMustBuildJobs(["job2"])
             build(jobsGraph)
         """)
 
@@ -234,7 +234,7 @@ class GraphBuildTest extends DSLTestCase {
 
         // when
         def flow = run("""
-            build(graph(["job0", "willFail"], ["willFail", "job1"]).withStartJobs(["job0"]))
+            build(graph(["job0", "willFail"], ["willFail", "job1"]).withMustBuildJobs(["job0"]))
         """)
 
         // then
@@ -253,7 +253,7 @@ class GraphBuildTest extends DSLTestCase {
             def bParams = [GRAPH_PARAM_1: "gparam1"]
             def jobsGraph = graph().addEdge("job1", "job2")
                 .withParams(bParams)
-                .withStartJobs(["job1"])
+                .withMustBuildJobs(["job1"])
             build(jobsGraph)
         """)
 
@@ -274,7 +274,7 @@ class GraphBuildTest extends DSLTestCase {
 
         // when
         def flow = run("""
-            def jobGraph = graph(["job0", "job1"]).withStartJobs(["job0", "non-existing"])
+            def jobGraph = graph(["job0", "job1"]).withMustBuildJobs(["job0", "non-existing"])
             build(jobGraph)
         """)
 
@@ -292,7 +292,7 @@ class GraphBuildTest extends DSLTestCase {
             def bParams = [count:0]
             def jobsGraph = graph(["job0", "job1"], ["job1", "job2"])
                 .withParams(bParams)
-                .withStartJobs(["job0"])
+                .withMustBuildJobs(["job0"])
                 .onBuildSuccess({j -> bParams[j.name] = j.buildNumber})
                 .onBuildSuccess({j -> bParams["count"] = bParams["count"] + 1})
 
@@ -320,7 +320,7 @@ class GraphBuildTest extends DSLTestCase {
 
         // when
         def flow = run("""
-            build(graph(["job0", "job1"], ["job0", "non-existing-job"]).withStartJobs(["job0"]))
+            build(graph(["job0", "job1"], ["job0", "non-existing-job"]).withMustBuildJobs(["job0"]))
         """)
 
         // then
@@ -337,7 +337,7 @@ class GraphBuildTest extends DSLTestCase {
 
         // when
         def flow = run("""
-            build(graph(["job0", "delayJob"], ["job0", "slowJob"], ["delayJob", "willFail"]).withStartJobs(["job0"]))
+            build(graph(["job0", "delayJob"], ["job0", "slowJob"], ["delayJob", "willFail"]).withMustBuildJobs(["job0"]))
         """)
 
         // then

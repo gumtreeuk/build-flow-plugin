@@ -173,18 +173,10 @@ class FlowGraph {
         return this
     }
 
-    def FlowGraph withBuildMode(String buildMode) {
-        if ("EVERYTHING".equals(buildMode)) {
-            this.withBuildEverything(true)
-        }
-        return this
-    }
-
     def FlowGraph withBuildEverything(boolean value) {
         this.buildEverything = value
         return this
     }
-
 
     def FlowGraph withBuildDependantJobs(boolean value) {
         this.buildDependantJobs = value
@@ -196,11 +188,6 @@ class FlowGraph {
         return this
     }
 
-    def FlowGraph withStartJobs(Collection<String> startJobs) {
-        this.startJobs.addAll(startJobs);
-        return this
-    }
-
     def FlowGraph withModifiedJobs(Collection<String> startJobs) {
         this.startJobs.addAll(startJobs);
         return this
@@ -208,11 +195,6 @@ class FlowGraph {
 
     def FlowGraph withMustBuildJobs(Collection<String> jobs) {
         this.mustBuildJobs.addAll(jobs)
-        return this
-    }
-
-    def FlowGraph withMoreStartJobs(Collection<String> jobs) {
-        this.startJobs.addAll(jobs)
         return this
     }
 
@@ -234,7 +216,7 @@ class FlowGraph {
     }
 
     List<String> getMustBuildJobs() {
-        return !mustBuildJobs.isEmpty() ? mustBuildJobs : startJobs;
+        return mustBuildJobs;
     }
 
     boolean getBuildDependantJobs() {
