@@ -208,15 +208,15 @@ class FlowGraph {
     }
 
     Collection<String> getStartJobs() {
-        if (buildEverything) {
-            return this.underlying.vertexSet()
-        } else {
-            return startJobs
-        }
+        return startJobs
     }
 
     List<String> getMustBuildJobs() {
-        return mustBuildJobs;
+        if (buildEverything) {
+            return this.underlying.vertexSet()
+        } else {
+            return mustBuildJobs
+        }
     }
 
     boolean getBuildDependantJobs() {
