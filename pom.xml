@@ -1,3 +1,4 @@
+
 <!--
   ~ The MIT License
   ~
@@ -47,8 +48,15 @@
   </licenses>
 
   <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
         <junit.version>4.12</junit.version>
         <pipeline.version>1.13</pipeline.version>
+
+        <gt.nexus.releases.id>GTRELEASE</gt.nexus.releases.id>
+        <gt.nexus.releases.name>Gumtree Internal Releases</gt.nexus.releases.name>
+        <gt.nexus.releases.url>http://nexus.qa.gt.ecg.so/nexus/content/repositories/releases/</gt.nexus.releases.url>
   </properties>
 
   <developers>
@@ -64,15 +72,6 @@
     <url>https://github.com/jenkinsci/build-flow-plugin</url>
     <tag>HEAD</tag>
   </scm>
-
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-
-        <gt.nexus.releases.id>GTRELEASE</gt.nexus.releases.id>
-        <gt.nexus.releases.name>Gumtree Internal Releases</gt.nexus.releases.name>
-        <gt.nexus.releases.url>http://nexus.qa.gt.ecg.so/nexus/content/repositories/releases/</gt.nexus.releases.url>
-    </properties>
 
     <distributionManagement>
         <repository>

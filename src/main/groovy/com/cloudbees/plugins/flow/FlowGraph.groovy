@@ -211,7 +211,7 @@ class FlowGraph {
         return startJobs
     }
 
-    List<String> getMustBuildJobs() {
+    Collection<String> getMustBuildJobs() {
         if (buildEverything) {
             return this.underlying.vertexSet()
         } else {

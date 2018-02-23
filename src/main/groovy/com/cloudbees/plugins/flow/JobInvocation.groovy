@@ -23,17 +23,21 @@
  * THE SOFTWARE.
  */
 
-package com.cloudbees.plugins.flow
-import hudson.model.*
-import hudson.model.queue.QueueTaskFuture
-import jenkins.model.Jenkins
+package com.cloudbees.plugins.flow;
 
-import java.text.DateFormat
-import java.util.concurrent.ExecutionException
-import java.util.concurrent.locks.Condition
-import java.util.concurrent.locks.Lock
-import java.util.concurrent.locks.ReentrantLock
-import java.util.logging.Logger
+import hudson.model.*
+import hudson.model.queue.QueueTaskFuture;
+import jenkins.model.Jenkins;
+
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.Condition;
+import java.util.logging.Logger;
+
+import java.text.DateFormat;
+
 /**
  * @author <a href="mailto:nicolas.deloof@gmail.com">Nicolas De Loof</a>
  */

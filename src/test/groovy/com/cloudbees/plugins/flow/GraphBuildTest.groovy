@@ -33,7 +33,7 @@ import static hudson.model.Result.SUCCESS
 
 class GraphBuildTest extends DSLTestCase {
 
-    @Override
+//    @Override
     protected void setUp() throws Exception {
         super.setUp()
         Jenkins.getInstance().setQuietPeriod(0)

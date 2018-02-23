@@ -1,6 +1,5 @@
 package com.cloudbees.plugins.flow
 import com.cloudbees.plugins.extras.ColoredNote
-import com.google.common.collect.Lists
 import groovy.transform.Synchronized
 import hudson.console.HyperlinkNote
 import hudson.model.Result
@@ -34,11 +33,8 @@ class FlowGraphExecutor {
     FlowGraphExecutor(FlowDelegate flowDSL, FlowGraph graph) {
         this.flowDSL = flowDSL
         this.graph = graph
-        if ("EVERYTHING" == graph.getBuildMode()) {
-            this.mustBuildJobs = filterOnlyExistingJobs(Lists.newArrayList(graph.getVertices()))
-        } else {
-            this.mustBuildJobs = filterOnlyExistingJobs(graph.getStartJobs())
-        }
+        this.mustBuildJobs = filterOnlyExistingJobs(graph.getMustBuildJobs())
+        addToBuildQueue(filterOnlyExistingJobs(graph.getStartJobs()))
     }
 
     def execute() {

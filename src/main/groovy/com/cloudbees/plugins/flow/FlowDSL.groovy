@@ -77,12 +77,12 @@ public class FlowDSL {
         // TODO : add restrictions for System.exit, etc ...
         FlowDelegate flow = new FlowDelegate(flowRun, listener, upstream, envMap)
 
+
         // parse the script in such a way that it delegates to the flow object as default
         def cc = new CompilerConfiguration();
         cc.scriptBaseClass = ClosureScript.class.name;
         def ic = new ImportCustomizer()
         ic.addStaticStars(Result.class.name)
-        ic.addStarImports("org.jgrapht")
         cc.addCompilationCustomizers(ic)
 
         ClosureScript dslScript = (ClosureScript)new GroovyShell(Jenkins.instance.pluginManager.uberClassLoader,new Binding(),cc).parse(dsl)
@@ -140,9 +140,8 @@ public class FlowDSL {
 
 @SuppressWarnings("GroovyUnusedDeclaration")
 public class FlowDelegate {
-    private static final PLACEHOLDER_PATTERN = ~/\{\{(.*)\}\}/
-    private static final Logger LOGGER = Logger.getLogger(FlowDelegate.class.getName());
 
+    private static final Logger LOGGER = Logger.getLogger(FlowDelegate.class.getName());
     def List<Cause> causes
     def FlowRun flowRun
     BuildListener listener
@@ -237,7 +236,7 @@ public class FlowDelegate {
         // [JENKINS-22960] wait for build to be finalized.
         flowRun.waitForFinalization(job);
         println("Build " + ModelHyperlinkNote.encodeTo('/'+ r.getUrl(), r.getFullDisplayName()) 
-                + " completed${r.result.isWorseThan(SUCCESS) ? " : " + r.result : ""}. " + consoleLog)
+                + " completed ${r.result.isWorseThan(SUCCESS) ? " : " + r.result : ""}. " + consoleLog)
         return job;
     }
 
@@ -255,7 +254,8 @@ public class FlowDelegate {
         
         List<Action> actions = new ArrayList<Action>();
         List<ParameterValue> params = [];
-        Set<String> addedParams = new HashSet<String>();for (Map.Entry param: args) {
+        Set<String> addedParams = new HashSet<String>();
+        for (Map.Entry param: args) {
             String paramName = param.key
             Object paramValue = param.value
             if (paramValue instanceof Closure) {
@@ -478,7 +478,7 @@ public class FlowDelegate {
 
             pool.shutdown()
             pool.awaitTermination(1, TimeUnit.DAYS)
-            current_state.lastCompleted = lastCompleted
+            current_state.lastCompleted =lastCompleted
         } finally {
             flowRun.state = current_state
             --indent
